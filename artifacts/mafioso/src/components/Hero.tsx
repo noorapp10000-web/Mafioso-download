@@ -1,9 +1,11 @@
-import { motion } from 'framer-motion';
+import { motion } from "framer-motion";
+import { incrementDownloadCount } from "../firebase";
 
 const APK_FILENAME = "/mafioso.apk";
 
 export default function Hero() {
   const handleDownload = () => {
+    incrementDownloadCount();
     const link = document.createElement("a");
     link.href = APK_FILENAME;
     link.download = "مافيوسو.apk";
@@ -14,81 +16,104 @@ export default function Hero() {
 
   return (
     <section id="hero" className="relative min-h-screen flex flex-col overflow-hidden">
-      {/* Background Image */}
-      <div 
+      {/* Background */}
+      <div
         className="absolute inset-0 z-0 bg-cover bg-center"
-        style={{ 
-          backgroundImage: 'url(/bg.webp)',
-        }}
+        style={{ backgroundImage: "url(/bg.webp)" }}
       >
-        {/* Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[rgba(0,0,0,0.85)] to-[rgba(139,0,0,0.4)]" />
+        <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, rgba(139,0,0,0.35) 60%, rgba(0,0,0,0.92) 100%)" }} />
       </div>
 
-      <div className="relative z-10 flex-grow flex flex-col justify-center items-center max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full pt-16">
-        <div className="flex flex-col lg:flex-row-reverse items-center justify-between w-full gap-12 lg:gap-8">
-          
-          {/* LEFT column visually (RTL so it's the right side of the flex row reverse) - MASCOT */}
+      <div className="relative z-10 flex-grow flex flex-col justify-center items-center max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full pt-20">
+        <div className="flex flex-col lg:flex-row-reverse items-center justify-between w-full gap-10 lg:gap-8">
+
+          {/* Mascot */}
           <div className="flex-1 flex justify-center lg:justify-end">
-            <motion.img 
-              src="/mascot.png" 
-              alt="Mascot"
-              className="max-h-96 lg:max-h-[500px] object-contain float-anim red-glow-shadow"
-              initial={{ opacity: 0, scale: 0.9 }}
+            <motion.img
+              src="/mascot.png"
+              alt="مافيوسو"
+              className="object-contain red-glow-shadow"
+              style={{ maxHeight: "clamp(280px, 45vw, 520px)" }}
+              initial={{ opacity: 0, scale: 0.88 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8 }}
+              transition={{ duration: 0.9 }}
+              // Float handled by CSS keyframe via className — but also add framer repeat:
+              // We'll use animate prop for float
+              // (CSS float-anim class is also applied via style below)
             />
           </div>
 
-          {/* RIGHT column visually (RTL so it's the left side) - TEXT */}
-          <motion.div 
-            className="flex-1 flex flex-col items-center lg:items-start text-center lg:text-right gap-6"
-            initial={{ opacity: 0, y: 30 }}
+          {/* Text */}
+          <motion.div
+            className="flex-1 flex flex-col items-center lg:items-start text-center lg:text-right gap-5"
+            initial={{ opacity: 0, y: 35 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
+            transition={{ duration: 0.85, delay: 0.15 }}
           >
-            <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-[#8B0000] border border-[#d4af37] text-sm font-bold">
-              <span>🔴 الآن متاح على Android</span>
+            {/* Badge */}
+            <div
+              className="inline-flex items-center px-4 py-1.5 rounded-full text-sm font-bold"
+              style={{
+                background: "rgba(139,0,0,0.5)",
+                border: "1px solid rgba(212,175,55,0.5)",
+                backdropFilter: "blur(8px)",
+              }}
+            >
+              🔴 الآن متاح على Android
             </div>
 
-            <h1 className="text-7xl lg:text-8xl font-black gold-text leading-tight">
+            {/* Title */}
+            <h1
+              className="font-black gold-text leading-none"
+              style={{ fontSize: "clamp(3.5rem, 10vw, 7rem)" }}
+            >
               مافيوسو
             </h1>
 
-            <p className="text-xl text-gray-300 font-bold">
+            <p className="text-xl text-gray-200 font-bold">
               لعبة الاستنتاج الاجتماعي الأولى بالعربي
             </p>
 
-            <p className="text-gray-400 max-w-xl text-lg">
+            <p className="text-gray-400 max-w-xl text-base lg:text-lg leading-relaxed">
               اكتشف المجرم، خدع أصحابك، وابقَ صاحي. من 4 لـ 6 لاعبين — محلي أو أونلاين
             </p>
 
-            <div className="flex flex-wrap justify-center lg:justify-start gap-4 p-3 bg-[rgba(0,0,0,0.5)] border border-[rgba(139,0,0,0.3)] rounded-xl mt-2">
-              <span className="font-bold">📱 متاح على Android</span>
-              <span className="text-gray-500 hidden sm:inline">•</span>
-              <span className="font-bold">👥 4–6 لاعبين</span>
-              <span className="text-gray-500 hidden sm:inline">•</span>
-              <span className="font-bold">🎮 أكثر من قضية</span>
+            {/* Stats row */}
+            <div
+              className="flex flex-wrap justify-center lg:justify-start gap-4 p-3 rounded-xl w-full max-w-md"
+              style={{
+                background: "rgba(0,0,0,0.45)",
+                border: "1px solid rgba(139,0,0,0.3)",
+                backdropFilter: "blur(6px)",
+              }}
+            >
+              <span className="font-bold text-sm">📱 متاح على Android</span>
+              <span className="text-gray-600 hidden sm:inline">•</span>
+              <span className="font-bold text-sm">👥 4–6 لاعبين</span>
+              <span className="text-gray-600 hidden sm:inline">•</span>
+              <span className="font-bold text-sm">🎮 أكثر من قضية</span>
             </div>
 
-            <div className="mt-4 flex flex-col items-center lg:items-start w-full gap-2">
-              <button 
+            {/* CTA */}
+            <div className="mt-2 flex flex-col items-center lg:items-start w-full gap-2">
+              <button
                 onClick={handleDownload}
-                className="w-full sm:w-auto px-10 py-5 bg-[#8B0000] hover:bg-[#a01010] text-white text-2xl font-black rounded-xl pulse-glow transition-all"
+                className="w-full sm:w-auto px-10 py-4 text-white text-xl lg:text-2xl font-black rounded-xl pulse-glow transition-all hover:scale-[1.02] active:scale-[0.98]"
+                style={{ background: "#8B0000" }}
               >
                 ⬇️ حمّل مافيوسو مجاناً
               </button>
-              <p className="text-sm text-[#888888]">
+              <p className="text-sm" style={{ color: "#888" }}>
                 APK مجاني • Android 5.0+ • بدون إعلانات
               </p>
             </div>
-
           </motion.div>
         </div>
       </div>
 
+      {/* Scroll indicator */}
       <div className="relative z-10 pb-8 flex justify-center w-full mt-auto">
-        <a href="#features" className="text-gray-400 hover:text-white bounce-scroll text-3xl">
+        <a href="#features" className="text-gray-400 hover:text-white bounce-scroll text-3xl block" aria-label="تمرير للأسفل">
           ↓
         </a>
       </div>
