@@ -89,22 +89,37 @@ export default function Hero() {
               اكتشف المجرم، خدع أصحابك، وابقَ صاحي. من 4 لـ 6 لاعبين — محلي أو أونلاين
             </p>
 
-            {/* Stats row — includes live download counter */}
+            {/* Stats row */}
             <div
-              className="flex flex-wrap justify-center lg:justify-start gap-x-5 gap-y-2 p-3 rounded-xl w-full max-w-md"
+              className="flex flex-wrap justify-center lg:justify-start gap-x-5 gap-y-2 p-3 rounded-2xl w-full max-w-md"
               style={{
                 background: "rgba(0,0,0,0.45)",
                 border: "1px solid rgba(139,0,0,0.3)",
                 backdropFilter: "blur(6px)",
               }}
             >
-              {/* Live download count — always visible once Firebase responds */}
-              <motion.span
-                className="font-black text-sm"
+              <span className="font-bold text-sm">📱 متاح على Android</span>
+              <span className="font-bold text-sm">👥 4–6 لاعبين</span>
+              <span className="font-bold text-sm">🎮 أكثر من 90 قضية</span>
+            </div>
+
+            {/* CTA */}
+            <div className="mt-2 flex flex-col items-center lg:items-start w-full gap-1">
+              <button
+                onClick={handleDownload}
+                className="w-full sm:w-auto px-10 py-4 text-white text-xl lg:text-2xl font-black rounded-2xl pulse-glow transition-all hover:scale-[1.02] active:scale-[0.98]"
+                style={{ background: "#8B0000" }}
+              >
+                ⬇️ حمّل مافيوسو مجاناً
+              </button>
+
+              {/* Download counter — directly below button */}
+              <motion.p
+                className="flex items-center gap-1.5 font-black text-sm"
                 style={{ color: "#d4af37" }}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 0.5 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
               >
                 ⬇️{" "}
                 {downloadCount === null ? (
@@ -112,22 +127,9 @@ export default function Hero() {
                 ) : (
                   <span>{formatCount(downloadCount)} تحميل</span>
                 )}
-              </motion.span>
-              <span className="font-bold text-sm">📱 متاح على Android</span>
-              <span className="font-bold text-sm">👥 4–6 لاعبين</span>
-              <span className="font-bold text-sm">🎮 أكثر من قضية</span>
-            </div>
+              </motion.p>
 
-            {/* CTA */}
-            <div className="mt-2 flex flex-col items-center lg:items-start w-full gap-2">
-              <button
-                onClick={handleDownload}
-                className="w-full sm:w-auto px-10 py-4 text-white text-xl lg:text-2xl font-black rounded-xl pulse-glow transition-all hover:scale-[1.02] active:scale-[0.98]"
-                style={{ background: "#8B0000" }}
-              >
-                ⬇️ حمّل مافيوسو مجاناً
-              </button>
-              <p className="text-sm" style={{ color: "#888" }}>
+              <p className="text-sm" style={{ color: "#666" }}>
                 APK مجاني • Android 5.0+ • بدون إعلانات
               </p>
             </div>

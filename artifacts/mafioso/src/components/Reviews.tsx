@@ -9,21 +9,22 @@ export default function Reviews() {
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState('');
-  const [submitted, setSubmitted] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (rating === 0 || !name.trim() || !comment.trim()) return;
 
-    setSubmitting(true);
-    addReview({ name: name.trim(), rating, comment: comment.trim() });
-    // Always show success — review saves in background
-    setSubmitted(true);
-    setSubmitting(false);
-    setName('');
-    setRating(0);
-    setComment('');
+    setStatus('submitting');
+    try {
+      addReview({ name: name.trim(), rating, comment: comment.trim() });
+      setStatus('success');
+      setName('');
+      setRating(0);
+      setComment('');
+    } catch {
+      setStatus('error');
+    }
   };
 
   return (
@@ -54,10 +55,11 @@ export default function Reviews() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.1 }}
-                className="rounded-xl p-5"
+                className="rounded-2xl p-5"
                 style={{
                   background: '#111',
-                  border: '1px solid rgba(139,0,0,0.2)',
+                  border: '1px solid rgba(139,0,0,0.25)',
+                  boxShadow: '0 4px 24px rgba(0,0,0,0.3)',
                 }}
               >
                 <div className="font-bold text-[#f0f0f0] text-base">{r.name}</div>
@@ -80,12 +82,16 @@ export default function Reviews() {
         {/* Submit form */}
         <div
           className="max-w-2xl mx-auto rounded-2xl p-6 md:p-8 mt-4"
-          style={{ background: '#111', border: '1px solid rgba(139,0,0,0.3)' }}
+          style={{
+            background: '#111',
+            border: '1px solid rgba(139,0,0,0.3)',
+            boxShadow: '0 8px 40px rgba(0,0,0,0.4)',
+          }}
         >
           <h3 className="gold-text text-2xl font-black mb-6 text-center">شارك رأيك</h3>
 
           <AnimatePresence mode="wait">
-            {submitted ? (
+            {status === 'success' ? (
               <motion.div
                 key="success"
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -93,20 +99,32 @@ export default function Reviews() {
                 className="text-center py-10 flex flex-col items-center gap-3"
               >
                 <div className="text-5xl">✅</div>
-                <p
-                  className="text-xl font-black"
-                  style={{ color: '#d4af37' }}
-                >
+                <p className="text-xl font-black" style={{ color: '#d4af37' }}>
                   شكراً على تقييمك!
                 </p>
-                <p className="text-gray-400 text-sm">
-                  تقييمك قيد المراجعة وهيظهر للاعبين قريباً
-                </p>
                 <button
-                  onClick={() => setSubmitted(false)}
-                  className="mt-4 text-sm text-gray-500 underline hover:text-gray-300"
+                  onClick={() => setStatus('idle')}
+                  className="mt-4 text-sm text-gray-500 underline hover:text-gray-300 transition-colors"
                 >
                   إرسال تقييم آخر
+                </button>
+              </motion.div>
+            ) : status === 'error' ? (
+              <motion.div
+                key="error"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="text-center py-10 flex flex-col items-center gap-3"
+              >
+                <div className="text-5xl">❌</div>
+                <p className="text-xl font-black text-red-400">
+                  حصل خطأ — حاول مرة ثانية
+                </p>
+                <button
+                  onClick={() => setStatus('idle')}
+                  className="mt-4 text-sm text-gray-500 underline hover:text-gray-300 transition-colors"
+                >
+                  حاول مجدداً
                 </button>
               </motion.div>
             ) : (
@@ -126,7 +144,7 @@ export default function Reviews() {
                     value={name}
                     onChange={e => setName(e.target.value)}
                     placeholder="اكتب اسمك هنا"
-                    className="w-full rounded-lg px-4 py-3 text-white focus:outline-none transition-colors"
+                    className="w-full rounded-xl px-4 py-3 text-white focus:outline-none transition-colors"
                     style={{
                       background: '#0a0a0a',
                       border: '1px solid rgba(255,255,255,0.1)',
@@ -169,7 +187,7 @@ export default function Reviews() {
                     onChange={e => setComment(e.target.value)}
                     placeholder="شاركنا رأيك..."
                     rows={4}
-                    className="w-full rounded-lg px-4 py-3 text-white focus:outline-none transition-colors resize-none"
+                    className="w-full rounded-xl px-4 py-3 text-white focus:outline-none transition-colors resize-none"
                     style={{
                       background: '#0a0a0a',
                       border: '1px solid rgba(255,255,255,0.1)',
@@ -181,11 +199,18 @@ export default function Reviews() {
 
                 <button
                   type="submit"
-                  disabled={submitting || rating === 0}
-                  className="w-full py-3 rounded-xl font-black text-white text-lg transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40"
+                  disabled={status === 'submitting' || rating === 0}
+                  className="w-full py-3 rounded-2xl font-black text-white text-lg transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40"
                   style={{ background: '#8B0000' }}
                 >
-                  {submitting ? 'جاري الإرسال...' : 'إرسال التقييم ✉️'}
+                  {status === 'submitting' ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block" />
+                      جاري الإرسال...
+                    </span>
+                  ) : (
+                    'إرسال التقييم ✉️'
+                  )}
                 </button>
               </motion.form>
             )}

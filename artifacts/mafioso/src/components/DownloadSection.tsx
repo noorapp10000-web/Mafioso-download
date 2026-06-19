@@ -1,9 +1,17 @@
 import { motion } from "framer-motion";
 import { incrementDownloadCount } from "../firebase";
+import { useDownloadCount } from "../hooks/useDownloadCount";
 
 const APK_FILENAME = "/mafioso.apk";
 
+function formatCount(n: number): string {
+  if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, "") + "k";
+  return n.toString();
+}
+
 export default function DownloadSection() {
+  const downloadCount = useDownloadCount();
+
   const handleDownload = () => {
     incrementDownloadCount();
     const link = document.createElement("a");
@@ -35,17 +43,38 @@ export default function DownloadSection() {
         />
 
         <h2 className="text-4xl lg:text-5xl font-black gold-text">جاهز تبدأ التحقيق؟</h2>
-        <p className="text-gray-300 text-lg mt-3 mb-10">
+        <p className="text-gray-300 text-lg mt-3 mb-8">
           حمّل مافيوسو مجاناً على أجهزة Android
         </p>
 
+        {/* Download button */}
         <button
           onClick={handleDownload}
-          className="w-full sm:w-auto px-14 py-5 text-white text-2xl font-black rounded-2xl pulse-glow transition-all hover:scale-[1.03] active:scale-[0.97] mx-auto block mb-12"
+          className="w-full sm:w-auto px-14 py-5 text-white text-2xl font-black rounded-2xl pulse-glow transition-all hover:scale-[1.03] active:scale-[0.97] mx-auto block"
           style={{ background: "#8B0000" }}
         >
           ⬇️ تحميل التطبيق
         </button>
+
+        {/* Download counter — below button */}
+        <motion.div
+          className="mt-4 mb-10 flex items-center justify-center gap-2"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+        >
+          <span className="text-2xl">⬇️</span>
+          <span
+            className="font-black text-lg"
+            style={{ color: "#d4af37" }}
+          >
+            {downloadCount === null ? (
+              <span className="opacity-40">...</span>
+            ) : (
+              <span>{formatCount(downloadCount)} تحميل</span>
+            )}
+          </span>
+        </motion.div>
 
         {/* Installation steps */}
         <div
@@ -54,6 +83,7 @@ export default function DownloadSection() {
             background: "rgba(17,17,17,0.85)",
             border: "1px solid rgba(139,0,0,0.3)",
             backdropFilter: "blur(10px)",
+            boxShadow: "0 8px 40px rgba(0,0,0,0.4)",
           }}
         >
           <p className="text-[#d4af37] font-black text-base mb-5" style={{ fontFamily: "'Cairo', sans-serif" }}>
