@@ -1,9 +1,17 @@
 import { motion } from "framer-motion";
 import { incrementDownloadCount } from "../firebase";
+import { useDownloadCount } from "../hooks/useDownloadCount";
 
 const APK_FILENAME = "/mafioso.apk";
 
+function formatCount(n: number): string {
+  if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, "") + "k";
+  return n.toString();
+}
+
 export default function Hero() {
+  const downloadCount = useDownloadCount();
+
   const handleDownload = () => {
     incrementDownloadCount();
     const link = document.createElement("a");
@@ -21,7 +29,13 @@ export default function Hero() {
         className="absolute inset-0 z-0 bg-cover bg-center"
         style={{ backgroundImage: "url(/bg.webp)" }}
       >
-        <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, rgba(139,0,0,0.35) 60%, rgba(0,0,0,0.92) 100%)" }} />
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, rgba(139,0,0,0.35) 60%, rgba(0,0,0,0.92) 100%)",
+          }}
+        />
       </div>
 
       <div className="relative z-10 flex-grow flex flex-col justify-center items-center max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full pt-20">
@@ -37,9 +51,6 @@ export default function Hero() {
               initial={{ opacity: 0, scale: 0.88 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.9 }}
-              // Float handled by CSS keyframe via className — but also add framer repeat:
-              // We'll use animate prop for float
-              // (CSS float-anim class is also applied via style below)
             />
           </div>
 
@@ -78,19 +89,32 @@ export default function Hero() {
               اكتشف المجرم، خدع أصحابك، وابقَ صاحي. من 4 لـ 6 لاعبين — محلي أو أونلاين
             </p>
 
-            {/* Stats row */}
+            {/* Stats row — includes live download counter */}
             <div
-              className="flex flex-wrap justify-center lg:justify-start gap-4 p-3 rounded-xl w-full max-w-md"
+              className="flex flex-wrap justify-center lg:justify-start gap-x-5 gap-y-2 p-3 rounded-xl w-full max-w-md"
               style={{
                 background: "rgba(0,0,0,0.45)",
                 border: "1px solid rgba(139,0,0,0.3)",
                 backdropFilter: "blur(6px)",
               }}
             >
+              {/* Live download count — always visible once Firebase responds */}
+              <motion.span
+                className="font-black text-sm"
+                style={{ color: "#d4af37" }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5 }}
+              >
+                ⬇️{" "}
+                {downloadCount === null ? (
+                  <span className="opacity-40">...</span>
+                ) : (
+                  <span>{formatCount(downloadCount)} تحميل</span>
+                )}
+              </motion.span>
               <span className="font-bold text-sm">📱 متاح على Android</span>
-              <span className="text-gray-600 hidden sm:inline">•</span>
               <span className="font-bold text-sm">👥 4–6 لاعبين</span>
-              <span className="text-gray-600 hidden sm:inline">•</span>
               <span className="font-bold text-sm">🎮 أكثر من قضية</span>
             </div>
 
@@ -113,7 +137,11 @@ export default function Hero() {
 
       {/* Scroll indicator */}
       <div className="relative z-10 pb-8 flex justify-center w-full mt-auto">
-        <a href="#features" className="text-gray-400 hover:text-white bounce-scroll text-3xl block" aria-label="تمرير للأسفل">
+        <a
+          href="#features"
+          className="text-gray-400 hover:text-white bounce-scroll text-3xl block"
+          aria-label="تمرير للأسفل"
+        >
           ↓
         </a>
       </div>
