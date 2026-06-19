@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { incrementDownloadCount } from "../firebase";
 import { useDownloadCount } from "../hooks/useDownloadCount";
@@ -10,6 +10,128 @@ function formatCount(n: number): string {
   return n.toString();
 }
 
+/* ─── Glitch hook ─── */
+const GLITCH_CHARS = "!@#$%^&*<>?/\\|~×÷";
+const ORIGINAL = "مافيوسو";
+
+function randomGlitch(text: string, intensity: number): string {
+  return text
+    .split("")
+    .map((ch) =>
+      Math.random() < intensity
+        ? GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)]
+        : ch
+    )
+    .join("");
+}
+
+function useGlitchTitle() {
+  const [display, setDisplay] = useState(ORIGINAL);
+  const [active, setActive] = useState(false);
+  const [offsetR, setOffsetR] = useState(0);
+  const [offsetC, setOffsetC] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+
+  useEffect(() => {
+    const schedule = () => {
+      const wait = 3500 + Math.random() * 2500;
+      timerRef.current = setTimeout(() => {
+        // Run glitch burst
+        setActive(true);
+        let tick = 0;
+        const totalTicks = 20;
+        const iv = setInterval(() => {
+          tick++;
+          const intensity =
+            tick < 6 ? 0.45 : tick < 14 ? 0.22 : 0.06;
+          setDisplay(randomGlitch(ORIGINAL, intensity));
+          setOffsetR((Math.random() - 0.5) * 12);
+          setOffsetC((Math.random() - 0.5) * 9);
+          if (tick >= totalTicks) {
+            clearInterval(iv);
+            setDisplay(ORIGINAL);
+            setOffsetR(0);
+            setOffsetC(0);
+            setActive(false);
+            schedule();
+          }
+        }, 48);
+      }, wait);
+    };
+    schedule();
+    return () => clearTimeout(timerRef.current);
+  }, []);
+
+  return { display, active, offsetR, offsetC };
+}
+
+/* ─── GlitchTitle component ─── */
+function GlitchTitle() {
+  const { display, active, offsetR, offsetC } = useGlitchTitle();
+  const fontSize = "clamp(3.5rem, 10vw, 7rem)";
+
+  return (
+    <h1
+      className="font-black leading-none"
+      style={{ position: "relative", display: "inline-block", fontSize }}
+      aria-label={ORIGINAL}
+    >
+      {/* Red ghost */}
+      <span
+        aria-hidden
+        style={{
+          position: "absolute",
+          inset: 0,
+          color: "#ff1133",
+          transform: `translateX(${offsetR}px)`,
+          opacity: active ? 0.7 : 0,
+          mixBlendMode: "screen",
+          transition: "opacity 0.06s",
+          userSelect: "none",
+          pointerEvents: "none",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {display}
+      </span>
+
+      {/* Cyan ghost */}
+      <span
+        aria-hidden
+        style={{
+          position: "absolute",
+          inset: 0,
+          color: "#00eeff",
+          transform: `translateX(${offsetC}px)`,
+          opacity: active ? 0.55 : 0,
+          mixBlendMode: "screen",
+          transition: "opacity 0.06s",
+          userSelect: "none",
+          pointerEvents: "none",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {display}
+      </span>
+
+      {/* Main text */}
+      <span
+        className="gold-text"
+        style={{
+          position: "relative",
+          textShadow: active
+            ? "0 0 30px rgba(212,175,55,0.9), 0 0 60px rgba(212,175,55,0.4)"
+            : "0 0 40px rgba(212,175,55,0.25)",
+          transition: "text-shadow 0.08s",
+        }}
+      >
+        {display}
+      </span>
+    </h1>
+  );
+}
+
+/* ─── Hero ─── */
 export default function Hero() {
   const downloadCount = useDownloadCount();
   const [dlState, setDlState] = useState<"idle" | "loading" | "done">("idle");
@@ -18,7 +140,6 @@ export default function Hero() {
     if (dlState !== "idle") return;
     setDlState("loading");
 
-    // Trigger the file download
     const link = document.createElement("a");
     link.href = APK_FILENAME;
     link.download = "مافيوسو.apk";
@@ -26,11 +147,9 @@ export default function Hero() {
     link.click();
     document.body.removeChild(link);
 
-    // Count in background — localStorage prevents double-counting
     incrementDownloadCount();
 
-    // Keep "جاري التحميل" for 3 s then switch to done
-    await new Promise(r => setTimeout(r, 3000));
+    await new Promise((r) => setTimeout(r, 3000));
     setDlState("done");
   };
 
@@ -85,13 +204,8 @@ export default function Hero() {
               🔴 الآن متاح على Android
             </div>
 
-            {/* Title */}
-            <h1
-              className="font-black gold-text leading-none"
-              style={{ fontSize: "clamp(3.5rem, 10vw, 7rem)" }}
-            >
-              مافيوسو
-            </h1>
+            {/* Glitch title */}
+            <GlitchTitle />
 
             <p className="text-xl text-gray-200 font-bold">
               لعبة الاستنتاج الاجتماعي الأولى بالعربي
@@ -121,7 +235,10 @@ export default function Hero() {
                 onClick={handleDownload}
                 disabled={dlState !== "idle"}
                 className="w-full sm:w-auto px-10 py-4 text-white text-xl lg:text-2xl font-black rounded-2xl pulse-glow transition-all hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed"
-                style={{ background: dlState === "done" ? "#1a6e1a" : "#8B0000", minWidth: 260 }}
+                style={{
+                  background: dlState === "done" ? "#1a6e1a" : "#8B0000",
+                  minWidth: 260,
+                }}
               >
                 {dlState === "loading" ? (
                   <span className="flex items-center justify-center gap-3">
