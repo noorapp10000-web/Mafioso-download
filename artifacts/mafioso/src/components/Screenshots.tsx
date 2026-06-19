@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useRef, useEffect } from 'react';
+import { motion } from 'framer-motion';
 
 import screen1 from '@assets/Screenshot_20260619-153235_1781874631699.jpg';
 import screen2 from '@assets/Screenshot_20260619-153241_1781874631658.jpg';
@@ -185,6 +185,37 @@ function PhoneFrame({ src, label }: { src: string; label: string }) {
 
 export default function Screenshots() {
   const [active, setActive] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  /* Track which slide is centred using IntersectionObserver */
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+
+    const observers: IntersectionObserver[] = [];
+
+    itemRefs.current.forEach((el, i) => {
+      if (!el) return;
+      const obs = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting && entry.intersectionRatio >= 0.6) {
+            setActive(i);
+          }
+        },
+        { root: container, threshold: 0.6 },
+      );
+      obs.observe(el);
+      observers.push(obs);
+    });
+
+    return () => observers.forEach(o => o.disconnect());
+  }, []);
+
+  /* Clicking a dot scrolls smoothly to that slide */
+  const scrollTo = (i: number) => {
+    itemRefs.current[i]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  };
 
   return (
     <section id="screenshots" className="bg-[#0a0a0a] py-20 overflow-hidden">
@@ -195,7 +226,7 @@ export default function Screenshots() {
           <p className="text-[#888] mt-3 text-sm">لقطات من داخل التطبيق الحقيقي</p>
         </div>
 
-        {/* ── Desktop: scrollable row ── */}
+        {/* ── Desktop: static row ── */}
         <div className="hidden md:flex gap-8 justify-center pb-4 flex-wrap">
           {screens.map(({ label, src }, i) => (
             <motion.div
@@ -210,30 +241,47 @@ export default function Screenshots() {
           ))}
         </div>
 
-        {/* ── Mobile: single carousel with dots ── */}
-        <div className="md:hidden flex flex-col items-center gap-6">
-          <div className="relative w-full flex justify-center" style={{ minHeight: PHONE_H + 60 }}>
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={active}
-                initial={{ opacity: 0, x: 60 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -60 }}
-                transition={{ duration: 0.3 }}
+        {/* ── Mobile: scroll-snap carousel ── */}
+        <div className="md:hidden flex flex-col items-center gap-5">
+
+          {/* Scrollable track */}
+          <div
+            ref={scrollRef}
+            style={{
+              display: 'flex',
+              overflowX: 'auto',
+              scrollSnapType: 'x mandatory',
+              WebkitOverflowScrolling: 'touch',
+              gap: 24,
+              paddingLeft: `calc(50vw - ${PHONE_W / 2}px)`,
+              paddingRight: `calc(50vw - ${PHONE_W / 2}px)`,
+              paddingBottom: 12,
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+              width: '100%',
+            }}
+            className="[&::-webkit-scrollbar]:hidden"
+          >
+            {screens.map(({ label, src }, i) => (
+              <div
+                key={i}
+                ref={el => { itemRefs.current[i] = el; }}
+                style={{ scrollSnapAlign: 'center', flexShrink: 0 }}
               >
-                <PhoneFrame src={screens[active].src} label={screens[active].label} />
-              </motion.div>
-            </AnimatePresence>
+                <PhoneFrame src={src} label={label} />
+              </div>
+            ))}
           </div>
 
           {/* Dot indicators */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
             {screens.map((_, i) => (
               <button
                 key={i}
-                onClick={() => setActive(i)}
+                onClick={() => scrollTo(i)}
+                aria-label={`الشاشة ${i + 1}`}
                 style={{
-                  width: i === active ? 24 : 8,
+                  width: i === active ? 28 : 8,
                   height: 8,
                   borderRadius: 4,
                   background: i === active ? '#d4af37' : 'rgba(255,255,255,0.2)',
@@ -246,23 +294,6 @@ export default function Screenshots() {
             ))}
           </div>
 
-          {/* Swipe arrows */}
-          <div className="flex gap-4">
-            <button
-              onClick={() => setActive(p => (p - 1 + screens.length) % screens.length)}
-              className="w-10 h-10 rounded-full flex items-center justify-center text-white/60 hover:text-white transition-colors"
-              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
-            >
-              ←
-            </button>
-            <button
-              onClick={() => setActive(p => (p + 1) % screens.length)}
-              className="w-10 h-10 rounded-full flex items-center justify-center text-white/60 hover:text-white transition-colors"
-              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
-            >
-              →
-            </button>
-          </div>
         </div>
 
       </div>
