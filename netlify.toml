@@ -1,0 +1,8 @@
+[build]
+  command = "pnpm --filter @workspace/mafioso run build"
+  publish = "artifacts/mafioso/dist"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
