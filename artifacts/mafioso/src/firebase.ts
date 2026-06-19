@@ -2,7 +2,6 @@ import { initializeApp } from "firebase/app";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, increment } from "firebase/firestore";
 import { getAnalytics } from "firebase/analytics";
 
-// ← ضع apiKey الحقيقي هنا — أضفه كـ Secret اسمه VITE_FIREBASE_API_KEY
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY ?? "REPLACE_WITH_YOUR_KEY",
   authDomain: "mafioso-30ea1.firebaseapp.com",
@@ -16,15 +15,22 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 
-// Analytics — only in browser
 if (typeof window !== "undefined") {
   getAnalytics(app);
 }
 
-// ── Download counter ─────────────────────────────────────────────────────────
-// Collection: "stats", Document: "global", Field: "downloads"
+const DOWNLOAD_KEY = "mafioso_counted";
+
+/**
+ * Increments the download counter in Firebase — only once per device/browser.
+ * Uses localStorage to avoid counting the same person twice (like Play Store unique installs).
+ */
 export async function incrementDownloadCount(): Promise<void> {
   try {
+    if (typeof window !== "undefined" && localStorage.getItem(DOWNLOAD_KEY)) {
+      return;
+    }
+
     const ref = doc(db, "stats", "global");
     const snap = await getDoc(ref);
     if (snap.exists()) {
@@ -32,8 +38,11 @@ export async function incrementDownloadCount(): Promise<void> {
     } else {
       await setDoc(ref, { downloads: 1 });
     }
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem(DOWNLOAD_KEY, "1");
+    }
   } catch (err) {
-    // Don't block the download if counter fails
     console.error("Download counter error:", err);
   }
 }

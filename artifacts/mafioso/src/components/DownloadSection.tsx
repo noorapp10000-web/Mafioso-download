@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { incrementDownloadCount } from "../firebase";
 import { useDownloadCount } from "../hooks/useDownloadCount";
@@ -11,15 +12,24 @@ function formatCount(n: number): string {
 
 export default function DownloadSection() {
   const downloadCount = useDownloadCount();
+  const [dlState, setDlState] = useState<"idle" | "loading" | "done">("idle");
 
-  const handleDownload = () => {
-    incrementDownloadCount();
+  const handleDownload = async () => {
+    if (dlState !== "idle") return;
+    setDlState("loading");
+
     const link = document.createElement("a");
     link.href = APK_FILENAME;
     link.download = "مافيوسو.apk";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+
+    // Count only once per device — firebase.ts checks localStorage
+    incrementDownloadCount();
+
+    await new Promise(r => setTimeout(r, 3000));
+    setDlState("done");
   };
 
   return (
@@ -50,10 +60,20 @@ export default function DownloadSection() {
         {/* Download button */}
         <button
           onClick={handleDownload}
-          className="w-full sm:w-auto px-14 py-5 text-white text-2xl font-black rounded-2xl pulse-glow transition-all hover:scale-[1.03] active:scale-[0.97] mx-auto block"
-          style={{ background: "#8B0000" }}
+          disabled={dlState !== "idle"}
+          className="w-full sm:w-auto px-14 py-5 text-white text-2xl font-black rounded-2xl pulse-glow transition-all hover:scale-[1.03] active:scale-[0.97] mx-auto block disabled:cursor-not-allowed"
+          style={{ background: dlState === "done" ? "#1a6e1a" : "#8B0000", minWidth: 280 }}
         >
-          ⬇️ تحميل التطبيق
+          {dlState === "loading" ? (
+            <span className="flex items-center justify-center gap-3">
+              <span className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin inline-block" />
+              جاري التحميل...
+            </span>
+          ) : dlState === "done" ? (
+            "✅ تم التحميل!"
+          ) : (
+            "⬇️ تحميل التطبيق"
+          )}
         </button>
 
         {/* Download counter — below button */}
@@ -63,17 +83,11 @@ export default function DownloadSection() {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.3 }}
         >
-          <span className="text-2xl">⬇️</span>
-          <span
-            className="font-black text-lg"
-            style={{ color: "#d4af37" }}
-          >
-            {downloadCount === null ? (
-              <span className="opacity-40">...</span>
-            ) : (
-              <span>{formatCount(downloadCount)} تحميل</span>
-            )}
-          </span>
+          {downloadCount !== null && (
+            <span className="font-bold text-base" style={{ color: "#d4af37" }}>
+              ⬇️ {formatCount(downloadCount)} تحميل
+            </span>
+          )}
         </motion.div>
 
         {/* Installation steps */}

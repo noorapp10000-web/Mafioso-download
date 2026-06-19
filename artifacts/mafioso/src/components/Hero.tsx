@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { incrementDownloadCount } from "../firebase";
 import { useDownloadCount } from "../hooks/useDownloadCount";
@@ -11,15 +12,26 @@ function formatCount(n: number): string {
 
 export default function Hero() {
   const downloadCount = useDownloadCount();
+  const [dlState, setDlState] = useState<"idle" | "loading" | "done">("idle");
 
-  const handleDownload = () => {
-    incrementDownloadCount();
+  const handleDownload = async () => {
+    if (dlState !== "idle") return;
+    setDlState("loading");
+
+    // Trigger the file download
     const link = document.createElement("a");
     link.href = APK_FILENAME;
     link.download = "مافيوسو.apk";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+
+    // Count in background — localStorage prevents double-counting
+    incrementDownloadCount();
+
+    // Keep "جاري التحميل" for 3 s then switch to done
+    await new Promise(r => setTimeout(r, 3000));
+    setDlState("done");
   };
 
   return (
@@ -104,32 +116,41 @@ export default function Hero() {
             </div>
 
             {/* CTA */}
-            <div className="mt-2 flex flex-col items-center lg:items-start w-full gap-1">
+            <div className="mt-2 flex flex-col items-center lg:items-start w-full gap-1.5">
               <button
                 onClick={handleDownload}
-                className="w-full sm:w-auto px-10 py-4 text-white text-xl lg:text-2xl font-black rounded-2xl pulse-glow transition-all hover:scale-[1.02] active:scale-[0.98]"
-                style={{ background: "#8B0000" }}
+                disabled={dlState !== "idle"}
+                className="w-full sm:w-auto px-10 py-4 text-white text-xl lg:text-2xl font-black rounded-2xl pulse-glow transition-all hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed"
+                style={{ background: dlState === "done" ? "#1a6e1a" : "#8B0000", minWidth: 260 }}
               >
-                ⬇️ حمّل مافيوسو مجاناً
+                {dlState === "loading" ? (
+                  <span className="flex items-center justify-center gap-3">
+                    <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin inline-block" />
+                    جاري التحميل...
+                  </span>
+                ) : dlState === "done" ? (
+                  "✅ تم التحميل!"
+                ) : (
+                  "⬇️ حمّل مافيوسو مجاناً"
+                )}
               </button>
 
-              {/* Download counter — directly below button */}
+              {/* Download counter */}
               <motion.p
-                className="flex items-center gap-1.5 font-black text-sm"
+                className="flex items-center gap-1.5 font-bold text-sm"
                 style={{ color: "#d4af37" }}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.4 }}
               >
-                ⬇️{" "}
                 {downloadCount === null ? (
-                  <span className="opacity-40">...</span>
+                  <span className="opacity-40 text-xs">...</span>
                 ) : (
-                  <span>{formatCount(downloadCount)} تحميل</span>
+                  <>⬇️ {formatCount(downloadCount)} تحميل</>
                 )}
               </motion.p>
 
-              <p className="text-sm" style={{ color: "#666" }}>
+              <p className="text-xs" style={{ color: "#666" }}>
                 APK مجاني • Android 5.0+ • بدون إعلانات
               </p>
             </div>
